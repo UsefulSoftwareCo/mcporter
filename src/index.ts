@@ -19,3 +19,6 @@ export { createGeneratedKeepAliveRuntime } from './generated-daemon-runtime.js';
 export { handleDaemonCli } from './cli/daemon-command.js';
 export type { ServerProxyOptions } from './server-proxy.js';
 export { createServerProxy } from './server-proxy.js';
+export type { OAuthAuthorizationRequest, OAuthSessionOptions } from './oauth.js';
+export type { CookieConsentOptions } from './consent-strategies.js';
+export { cookieConsentStrategy } from './consent-strategies.js';

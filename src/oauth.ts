@@ -24,6 +24,13 @@ export interface OAuthAuthorizationRequest {
 export interface OAuthSessionOptions {
   suppressBrowserLaunch?: boolean;
   onAuthorizationUrl?: (request: OAuthAuthorizationRequest) => void | Promise<void>;
+  /**
+   * Fully headless consent: given the authorization request, resolve the OAuth
+   * authorization code directly (e.g. by driving an identity provider over its
+   * API) — no browser, no loopback callback server. When set, this takes
+   * precedence over `suppressBrowserLaunch` / `onAuthorizationUrl`.
+   */
+  consentStrategy?: (request: OAuthAuthorizationRequest) => Promise<{ code: string }>;
 }
 
 interface Deferred<T> {
@@ -272,11 +279,23 @@ class PersistentOAuthClientProvider implements OAuthClientProvider {
 
   async redirectToAuthorization(authorizationUrl: URL): Promise<void> {
     this.authorizationRedirectStarted = true;
-    this.ensureAuthorizationDeferred();
+    const deferred = this.ensureAuthorizationDeferred();
     const request = {
       authorizationUrl: authorizationUrl.toString(),
       redirectUrl: this.redirectUrlValue.toString(),
     } satisfies OAuthAuthorizationRequest;
+    // Headless consent: resolve the authorization code directly and settle the
+    // same deferred the callback server would, so every auth round completes
+    // without a browser or the loopback callback.
+    if (this.options.consentStrategy) {
+      try {
+        const { code } = await this.options.consentStrategy(request);
+        deferred.resolve(code);
+      } catch (error) {
+        deferred.reject(error);
+      }
+      return;
+    }
     if (this.options.suppressBrowserLaunch) {
       await this.options.onAuthorizationUrl?.(request);
       return;
