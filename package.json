@@ -1,5 +1,5 @@
 {
-  "name": "mcporter",
+  "name": "@executor-js/mcporter",
   "version": "0.11.3",
   "description": "TypeScript runtime and CLI for connecting to configured Model Context Protocol servers.",
   "keywords": [
